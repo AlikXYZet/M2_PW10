@@ -6,7 +6,7 @@
 #include "Components/TextRenderComponent.h"
 
 #include "Generators/AgeGen_Runnable.h"
-#include "Generators/ColorGen_Runnable.h"
+#include "M2PW10/Tools/MyRandom.h"
 
 #include "GeneratedCube.generated.h"
 
@@ -71,20 +71,9 @@ private:
     /* ---   Color   --- */
 public:
 
-    //UFUNCTION(BlueprintCallable)
-    void SetColor(const FLinearColor iColor);
-    void UpdateColor();
-
-    FLinearColor NewColor;
+    void ColorGeneration(UStaticMeshComponent *irMesh);
 
 private:
 
-    
-
-    FColorGen_Runnable *ColorGen_Class = nullptr;
-    FRunnableThread *ColorGen_Thread = nullptr;
-
-    void StopColorThread();
-    void CreateColorThread();
     //--------------------------------------------
 };

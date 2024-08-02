@@ -34,7 +34,7 @@ void AGeneratedCube::BeginPlay()
 
     // Создание потоков генерации данных
     CreateAgeThread();
-    CreateColorThread();
+    ColorGeneration(CubeMesh);
 }
 
 void AGeneratedCube::Tick(float DeltaTime)
@@ -46,7 +46,6 @@ void AGeneratedCube::Destroyed()
 {
     // Останов потоков при уничтожении актора
     StopAgeThread();
-    StopColorThread(); // Перестраховка
 
     Super::Destroyed();
 }
@@ -55,7 +54,6 @@ void AGeneratedCube::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     // Останов потоков при выходе из активной сессии
     StopAgeThread();
-    StopColorThread(); // Перестраховка
 
     Super::EndPlay(EndPlayReason);
 }
@@ -127,42 +125,13 @@ void AGeneratedCube::CreateAgeThread()
 
 /* ---   Color   --- */
 
-void AGeneratedCube::SetColor(const FLinearColor iColor)
+void AGeneratedCube::ColorGeneration(UStaticMeshComponent *irMesh)
 {
-    CubeMesh->CreateDynamicMaterialInstance(0)->SetVectorParameterValue(TEXT("CubeColor"), iColor);
-
-    StopColorThread();
-}
-
-void AGeneratedCube::UpdateColor()
-{
-    SetColor(NewColor);
-}
-
-void AGeneratedCube::StopColorThread()
-{
-    if (ColorGen_Thread)
-    {
-        //ColorGen_Thread->Suspend(false);
-        ColorGen_Thread->Kill(false);
-
-        ColorGen_Thread = nullptr;
-        ColorGen_Class = nullptr;
-    }
-}
-
-void AGeneratedCube::CreateColorThread()
-{
-    if (!ColorGen_Thread)
-    {
-        if (!ColorGen_Class)
-            ColorGen_Class = new FColorGen_Runnable(this);
-
-        ColorGen_Thread = FRunnableThread::Create(
-        ColorGen_Class,
-            TEXT("ColorGenThread"),
-            0,
-            EThreadPriority::TPri_Normal);
-    }
+    if (irMesh)
+        AsyncTask(ENamedThreads::AnyHiPriThreadNormalTask, [irMesh]()
+            {
+                irMesh->CreateDynamicMaterialInstance(0)
+                    ->SetVectorParameterValue(TEXT("CubeColor"), GetRandomColor());
+            });
 }
 //----------------------------------------------------------------------------------------
