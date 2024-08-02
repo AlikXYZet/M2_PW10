@@ -6,7 +6,7 @@
 #include "Components/TextRenderComponent.h"
 
 #include "Generators/AgeGen_Runnable.h"
-//#include "Generators/"
+#include "Generators/ColorGen_Runnable.h"
 
 #include "GeneratedCube.generated.h"
 
@@ -46,14 +46,13 @@ public:
 
     /* ---   Age   --- */
 public:
+
     //UFUNCTION(BlueprintCallable)  // for tests
     void SetAge(const int32 iAge);
 
     void UpdateLifetime(const int32 iLifetime);
     UFUNCTION(BlueprintNativeEvent)
     void UpdateLifetime_BP(const int32 Lifetime);
-
-    void StopAgeThread();
 
 private:
 
@@ -63,6 +62,7 @@ private:
     FAgeGen_Runnable *AgeGen_Class = nullptr;
     FRunnableThread *AgeGen_Thread = nullptr;
 
+    void StopAgeThread();
     void CreateAgeThread();
     //--------------------------------------------
 
@@ -70,10 +70,21 @@ private:
 
     /* ---   Color   --- */
 public:
-    UFUNCTION(BlueprintCallable)
+
+    //UFUNCTION(BlueprintCallable)
     void SetColor(const FLinearColor iColor);
+    void UpdateColor();
+
+    FLinearColor NewColor;
 
 private:
 
+    
+
+    FColorGen_Runnable *ColorGen_Class = nullptr;
+    FRunnableThread *ColorGen_Thread = nullptr;
+
+    void StopColorThread();
+    void CreateColorThread();
     //--------------------------------------------
 };

@@ -1,12 +1,12 @@
 ﻿#include "AgeGen_Runnable.h"
 
 #include "M2PW10/GeneratedCube.h"
-#include <random>
+#include "M2PW10/Tools/MyRandom.h"
 
 FAgeGen_Runnable::FAgeGen_Runnable(AGeneratedCube *rCube)
 {
     rGeneratedCube = rCube;
-    CurrentLifetime = GetRandom();
+    CurrentLifetime = GetRandomAge();
 }
 
 FAgeGen_Runnable::~FAgeGen_Runnable()
@@ -52,13 +52,4 @@ void FAgeGen_Runnable::Exit()
     // PS: Требуется анализ необходимости очистки (ускорение кода на несколько тактов),
     // ибо после вызова Exit() данный класс вроде-как уничтожается, уничтожая за собой указатели
     rGeneratedCube = nullptr;
-}
-
-int32 FAgeGen_Runnable::GetRandom()
-{
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> distrib(0, 60);
-
-    return distrib(gen);
 }
