@@ -1,5 +1,7 @@
 ﻿#include "GeneratedCube.h"
 
+#include "MessageEndpointBuilder.h"
+
 AGeneratedCube::AGeneratedCube()
 {
     // Вызывать Tick() каждый такт?
@@ -134,25 +136,38 @@ void AGeneratedCube::SetColor(const FLinearColor iColor)
     StopColorThread();
 }
 
-void AGeneratedCube::UpdateColor()
+void AGeneratedCube::BM_ColorHandler(const FCubeColor &Message, const TSharedRef<IMessageContext, ESPMode::ThreadSafe> &Context)
 {
-    SetColor(NewColor);
+    SetColor(FLinearColor(Message.ColorData));
 }
 
 void AGeneratedCube::StopColorThread()
 {
+    // Аналогичен StopAgeThread()
     if (ColorGen_Thread)
     {
-        //ColorGen_Thread->Suspend(false);
+        ColorGen_Thread->Suspend(false);
         ColorGen_Thread->Kill(false);
 
         ColorGen_Thread = nullptr;
         ColorGen_Class = nullptr;
     }
+
+    // Индивидуально для Message
+    if (EP_ColorReceiver.IsValid())
+        EP_ColorReceiver.Reset();
 }
 
 void AGeneratedCube::CreateColorThread()
 {
+    // Индивидуально для Message
+    EP_ColorReceiver = FMessageEndpoint::Builder("ColorReceiver_AGeneratedCube")
+        .Handling<FCubeColor>(this, &AGeneratedCube::BM_ColorHandler);
+
+    if (EP_ColorReceiver.IsValid())
+        EP_ColorReceiver->Subscribe<FCubeColor>();
+
+    // Аналогичен CreateAgeThread()
     if (!ColorGen_Thread)
     {
         if (!ColorGen_Class)

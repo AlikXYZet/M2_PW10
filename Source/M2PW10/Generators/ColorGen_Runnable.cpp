@@ -1,4 +1,5 @@
-#include "ColorGen_Runnable.h"
+ï»¿#include "ColorGen_Runnable.h"
+#include "MessageEndpointBuilder.h"
 
 #include "M2PW10/GeneratedCube.h"
 #include "M2PW10/Tools/MyRandom.h"
@@ -6,6 +7,8 @@
 FColorGen_Runnable::FColorGen_Runnable(AGeneratedCube *rCube)
 {
     rGeneratedCube = rCube;
+
+    EP_ColorSender = FMessageEndpoint::Builder("Sender_ColorGen_Runnable").Build();
 }
 
 FColorGen_Runnable::~FColorGen_Runnable()
@@ -14,19 +17,23 @@ FColorGen_Runnable::~FColorGen_Runnable()
 
 uint32 FColorGen_Runnable::Run()
 {
-    // PS: Ïðè ïðÿìîì âûçîâå ôóíêöèè:
-    // ñðàáàòûâàåò, íî âîçíèêàåò âûëåò ïðè çàâåðøåíèè ñåññèè ("UE4Editor-Core.pdb íå çàãðóæåí")
-    // Ðåøåíèå(?): Çàïèñàòü çíà÷åíèå îò GetRandomColor() â ëîêàëüíóþ ïåðåìåííóþ êóáà
-    // è âûçâàòü ôóíêöèþ/äåëåãàò (???)
+    // PS: ÐŸÑ€Ð¸ Ð¿Ñ€ÑÐ¼Ð¾Ð¼ Ð²Ñ‹Ð·Ð¾Ð²Ðµ Ñ„ÑƒÐ½ÐºÑ†Ð¸Ð¸:
+    // ÑÑ€Ð°Ð±Ð°Ñ‚Ñ‹Ð²Ð°ÐµÑ‚, Ð½Ð¾ Ð²Ð¾Ð·Ð½Ð¸ÐºÐ°ÐµÑ‚ Ð²Ñ‹Ð»ÐµÑ‚ Ð¿Ñ€Ð¸ Ð·Ð°Ð²ÐµÑ€ÑˆÐµÐ½Ð¸Ð¸ ÑÐµÑÑÐ¸Ð¸ ("UE4Editor-Core.pdb Ð½Ðµ Ð·Ð°Ð³Ñ€ÑƒÐ¶ÐµÐ½")
+    // Ð ÐµÑˆÐµÐ½Ð¸Ðµ(?): Ð˜ÑÐ¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ñ‚ÑŒ IMessageBus Ð´Ð»Ñ Ð¿ÐµÑ€ÐµÐ´Ð°Ñ‡Ð¸ Ð´Ð°Ð½Ð½Ñ‹Ñ… Ñ Ð²Ñ‹Ð·Ð¾Ð²Ð¾Ð¼ Ñ„ÑƒÐ½ÐºÑ†Ð¸Ð¸ Ñ‡ÐµÑ€ÐµÐ· Ð´ÐµÐ»ÐµÐ³Ð°Ñ‚
     //rGeneratedCube->SetColor(GetRandomColor());
 
-    rGeneratedCube->NewColor = GetRandomColor();
-    //rGeneratedCube->UpdateColor();
+    // ÐžÑ‚Ð¿Ñ€Ð°Ð²ÐºÐ° Ð´Ð°Ð½Ð½Ñ‹Ñ…
+    // PS: Ð¢Ñ€ÐµÐ±ÑƒÐµÑ‚ÑÑ Ð¾Ñ‚ÑÐ»ÐµÐ¶Ð¸Ð²Ð°Ð½Ð¸Ðµ ÐšÑƒÐ±Ð° Ð¿Ñ€Ð¸ Ñ€Ð°Ð±Ð¾Ñ‚Ðµ Ñ Ð½ÐµÑÐºÐ¾Ð»ÑŒÐºÐ¸Ð¼Ð¸ ÐšÑƒÐ±Ð°Ð¼Ð¸
+    if (EP_ColorSender.IsValid())
+        EP_ColorSender->Publish<FCubeColor>(new FCubeColor(GetRandomColor()));
 
-    return 0;
+    return 1;
 }
 
 void FColorGen_Runnable::Exit()
 {
+    if (EP_ColorSender.IsValid())
+        EP_ColorSender.Reset();
+
     rGeneratedCube = nullptr;
 }

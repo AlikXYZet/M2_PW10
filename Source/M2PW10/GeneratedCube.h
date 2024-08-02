@@ -10,12 +10,26 @@
 
 #include "GeneratedCube.generated.h"
 
+USTRUCT(BlueprintType)
+struct FCubeColor
+{
+    GENERATED_BODY()
+
+    FLinearColor ColorData = FLinearColor::Black;
+
+    FCubeColor(FLinearColor iColor = FLinearColor::Black)
+        : ColorData(iColor) {};
+};
+
+
+
 UCLASS()
 class M2PW10_API AGeneratedCube : public AActor
 {
     GENERATED_BODY()
 
 public:
+
     /* ---   Base   --- */
 
     AGeneratedCube();
@@ -28,6 +42,8 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"), Category = Components)
     UTextRenderComponent *TextLifetime;
     //--------------------------------------------
+
+
 
 protected:
 
@@ -73,13 +89,16 @@ public:
 
     //UFUNCTION(BlueprintCallable)
     void SetColor(const FLinearColor iColor);
-    void UpdateColor();
-
-    FLinearColor NewColor;
 
 private:
 
-    
+    // "Получатель" данных
+    TSharedPtr<FMessageEndpoint, ESPMode::ThreadSafe> EP_ColorReceiver;
+
+    // "Обрабодчик" данных
+    void BM_ColorHandler(
+        const struct FCubeColor &Message,
+        const TSharedRef<IMessageContext, ESPMode::ThreadSafe> &Context);
 
     FColorGen_Runnable *ColorGen_Class = nullptr;
     FRunnableThread *ColorGen_Thread = nullptr;

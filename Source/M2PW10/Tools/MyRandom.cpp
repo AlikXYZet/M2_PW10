@@ -1,4 +1,4 @@
-#include "MyRandom.h"
+﻿#include "MyRandom.h"
 
 int32 GetRandom(int32 min, int32 max)
 {

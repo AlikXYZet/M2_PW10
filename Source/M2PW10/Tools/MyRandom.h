@@ -1,13 +1,13 @@
-#pragma once
+п»ї#pragma once
 
 #include "CoreMinimal.h"
 #include <random>
 
-// Получение рандомного значения [min, max]
+// РџРѕР»СѓС‡РµРЅРёРµ СЂР°РЅРґРѕРјРЅРѕРіРѕ Р·РЅР°С‡РµРЅРёСЏ [min, max]
 int32 GetRandom(int32 min, int32 max);
 
-// Получение рандомного значения [0, 60]
+// РџРѕР»СѓС‡РµРЅРёРµ СЂР°РЅРґРѕРјРЅРѕРіРѕ Р·РЅР°С‡РµРЅРёСЏ [0, 60]
 int32 GetRandomAge();
 
-// Получение рандомного цвета FLinearColor(rand, rand, rand, 1.f)
+// РџРѕР»СѓС‡РµРЅРёРµ СЂР°РЅРґРѕРјРЅРѕРіРѕ С†РІРµС‚Р° FLinearColor(rand, rand, rand, 1.f)
 FLinearColor GetRandomColor();

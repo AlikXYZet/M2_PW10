@@ -1,6 +1,8 @@
-#pragma once
+п»ї#pragma once
 
 #include "CoreMinimal.h"
+
+#include "MessageEndpoint.h"
 
 class AGeneratedCube;
 
@@ -22,7 +24,9 @@ public:
 
 private:
 
-    // Указатель на куб, чьи данные генерируем
+    // РЈРєР°Р·Р°С‚РµР»СЊ РЅР° РєСѓР±, С‡СЊРё РґР°РЅРЅС‹Рµ РіРµРЅРµСЂРёСЂСѓРµРј
     AGeneratedCube *rGeneratedCube;
 
+    // "РћС‚РїСЂР°РІРёС‚РµР»СЊ" РґР°РЅРЅС‹С…
+    TSharedPtr<FMessageEndpoint, ESPMode::ThreadSafe> EP_ColorSender;
 };
