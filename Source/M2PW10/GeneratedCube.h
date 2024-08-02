@@ -5,6 +5,9 @@
 
 #include "Components/TextRenderComponent.h"
 
+#include "Generators/AgeGen_Runnable.h"
+//#include "Generators/"
+
 #include "GeneratedCube.generated.h"
 
 UCLASS()
@@ -34,26 +37,43 @@ public:
 
     virtual void Tick(float DeltaTime) override;
 
+    virtual void Destroyed() override;
+
+    virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+    //--------------------------------------------
+
 
 
     /* ---   Age   --- */
-
-    // Возвраст кубика: время жизни в секундах
-    int32 Age = 0;
-
-    UFUNCTION(BlueprintCallable)
+public:
+    //UFUNCTION(BlueprintCallable)  // for tests
     void SetAge(const int32 iAge);
 
     void UpdateLifetime(const int32 iLifetime);
     UFUNCTION(BlueprintNativeEvent)
-    void UpdateLifetime_BP(const int32 iLifetime);
+    void UpdateLifetime_BP(const int32 Lifetime);
+
+    void StopAgeThread();
+
+private:
+
+    // Возвраст кубика: время жизни в секундах
+    int32 Age = 0;
+
+    FAgeGen_Runnable *AgeGen_Class = nullptr;
+    FRunnableThread *AgeGen_Thread = nullptr;
+
+    void CreateAgeThread();
     //--------------------------------------------
 
 
 
     /* ---   Color   --- */
-
+public:
     UFUNCTION(BlueprintCallable)
     void SetColor(const FLinearColor iColor);
+
+private:
+
     //--------------------------------------------
 };
