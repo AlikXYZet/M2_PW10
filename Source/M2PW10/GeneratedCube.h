@@ -40,6 +40,9 @@ public:
     virtual void Destroyed() override;
 
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+    // Функция для реализации функций остановки всех потоков в Destroyed() и EndPlay();
+    void StopAllThread();
     //--------------------------------------------
 
 
@@ -71,18 +74,16 @@ private:
     /* ---   Color   --- */
 public:
 
-    //UFUNCTION(BlueprintCallable)
-    void SetColor(const FLinearColor iColor);
-    void UpdateColor();
-
-    FLinearColor NewColor;
+    FLinearColor NewColor = FLinearColor::Black;
 
 private:
 
-    
-
     FColorGen_Runnable *ColorGen_Class = nullptr;
     FRunnableThread *ColorGen_Thread = nullptr;
+    FEvent *rColorGen_Event = nullptr;
+
+    // Обновление цвета куба с ожиданием триггера от вспомогательного потока
+    void UpdateColor();
 
     void StopColorThread();
     void CreateColorThread();

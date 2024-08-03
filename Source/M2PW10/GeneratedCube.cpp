@@ -45,8 +45,8 @@ void AGeneratedCube::Tick(float DeltaTime)
 void AGeneratedCube::Destroyed()
 {
     // Останов потоков при уничтожении актора
-    StopAgeThread();
-    StopColorThread(); // Перестраховка
+
+    StopAllThread();
 
     Super::Destroyed();
 }
@@ -54,10 +54,15 @@ void AGeneratedCube::Destroyed()
 void AGeneratedCube::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     // Останов потоков при выходе из активной сессии
-    StopAgeThread();
-    StopColorThread(); // Перестраховка
+    StopAllThread();
 
     Super::EndPlay(EndPlayReason);
+}
+
+void AGeneratedCube::StopAllThread()
+{
+    StopAgeThread();
+    StopColorThread(); // Перестраховка
 }
 //----------------------------------------------------------------------------------------
 
@@ -127,28 +132,34 @@ void AGeneratedCube::CreateAgeThread()
 
 /* ---   Color   --- */
 
-void AGeneratedCube::SetColor(const FLinearColor iColor)
-{
-    CubeMesh->CreateDynamicMaterialInstance(0)->SetVectorParameterValue(TEXT("CubeColor"), iColor);
-
-    StopColorThread();
-}
-
 void AGeneratedCube::UpdateColor()
 {
-    SetColor(NewColor);
+    // Необходим для ожидания актуальных (уже изменённых) данных
+    rColorGen_Event->Wait(20000);
+
+    CubeMesh->CreateDynamicMaterialInstance(0)->SetVectorParameterValue(TEXT("CubeColor"), NewColor);
+
+    StopColorThread();
 }
 
 void AGeneratedCube::StopColorThread()
 {
     if (ColorGen_Thread)
     {
-        //ColorGen_Thread->Suspend(false);
-        ColorGen_Thread->Kill(false);
+        ColorGen_Thread->Suspend(false);
+        ColorGen_Thread->Kill(true);
 
         ColorGen_Thread = nullptr;
         ColorGen_Class = nullptr;
     }
+
+    if (rColorGen_Event)
+    {
+        UE_LOG(LogTemp, Error, TEXT("AGeneratedCube::StopColorThread rColorGen_Event >< nullptr"));
+        rColorGen_Event = nullptr;
+    }
+    else
+        UE_LOG(LogTemp, Error, TEXT("AGeneratedCube::StopColorThread rColorGen_Event = nullptr"));
 }
 
 void AGeneratedCube::CreateColorThread()
@@ -156,7 +167,7 @@ void AGeneratedCube::CreateColorThread()
     if (!ColorGen_Thread)
     {
         if (!ColorGen_Class)
-            ColorGen_Class = new FColorGen_Runnable(this);
+            ColorGen_Class = new FColorGen_Runnable(this, &rColorGen_Event);
 
         ColorGen_Thread = FRunnableThread::Create(
         ColorGen_Class,
@@ -164,5 +175,8 @@ void AGeneratedCube::CreateColorThread()
             0,
             EThreadPriority::TPri_Normal);
     }
+
+    // Обновление цвета куба
+    UpdateColor();
 }
 //----------------------------------------------------------------------------------------
