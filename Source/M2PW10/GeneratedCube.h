@@ -10,17 +10,53 @@
 
 #include "GeneratedCube.generated.h"
 
+
+
+/* ---   Struct for IMessage   --- */
+
+// Общая структура фильтрации
 USTRUCT(BlueprintType)
-struct FCubeColor
+struct FCubeData
 {
     GENERATED_BODY()
 
+    // Указатель на Куб (необходим для фильтрации)
     AGeneratedCube *rCube = nullptr;
+
+    FCubeData(AGeneratedCube *iCube = nullptr) : rCube(iCube) {}
+};
+
+// Структура данных для FAgeGen_Runnable
+USTRUCT(BlueprintType)
+struct FCubeLifetime : public FCubeData
+{
+    GENERATED_BODY()
+
+    // Данные (атомарность/потокобезопасность не обязательна)
+    //std::atomic_int32_t CurrentLifetime = 0;
+    int32 CurrentLifetime = 0;
+
+    FCubeLifetime(AGeneratedCube *iCube = nullptr, int32 iLifetime = 0)
+        : FCubeData(iCube), CurrentLifetime(iLifetime) {};
+};
+
+// Структура данных для FColorGen_Runnable
+USTRUCT(BlueprintType)
+struct FCubeColor : public FCubeData
+{
+    GENERATED_BODY()
+
+    // Данные
     FLinearColor ColorData = FLinearColor::Black;
 
     FCubeColor(AGeneratedCube *iCube = nullptr, FLinearColor iColor = FLinearColor::Black)
-        : rCube(iCube), ColorData(iColor) {};
+        : FCubeData(iCube), ColorData(iColor) {};
 };
+
+// PS: Дабы избежать вызова "Message" всех дочерних структур от FCubeData,
+// требуется прописывать "USTRUCT(BlueprintType)" и "GENERATED_BODY()"
+// во всех дочерних структурах
+//----------------------------------------------------------------------------------------
 
 
 
@@ -71,10 +107,16 @@ public:
     void SetAge(const int32 iAge);
 
     void UpdateLifetime(const int32 iLifetime);
-    UFUNCTION(BlueprintNativeEvent)
-    void UpdateLifetime_BP(const int32 Lifetime);
 
 private:
+
+    // "Получатель" данных
+    TSharedPtr<FMessageEndpoint, ESPMode::ThreadSafe> EP_AgeReceiver;
+
+    // "Обрабодчик" данных
+    void BM_AgeHandler(
+        const struct FCubeLifetime &Message,
+        const TSharedRef<IMessageContext, ESPMode::ThreadSafe> &Context);
 
     // Возвраст кубика: время жизни в секундах
     int32 Age = 0;

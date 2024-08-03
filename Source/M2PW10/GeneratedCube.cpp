@@ -75,6 +75,7 @@ void AGeneratedCube::SetAge(const int32 iAge)
 {
     Age = iAge;
     TextAge->SetText(FString::Printf(TEXT("%d"), iAge));
+    TextLifetime->SetText(FString::Printf(TEXT("%d"), iAge));
 }
 
 void AGeneratedCube::UpdateLifetime(const int32 iLifetime)
@@ -82,15 +83,20 @@ void AGeneratedCube::UpdateLifetime(const int32 iLifetime)
     if (iLifetime >= 0)
     {
         TextLifetime->SetText(FString::Printf(TEXT("%d"), iLifetime));
-        UpdateLifetime_BP(iLifetime);
     }
     else
         this->Destroy();
 }
 
-void AGeneratedCube::UpdateLifetime_BP_Implementation(const int32 Lifetime)
+void AGeneratedCube::BM_AgeHandler(
+    const FCubeLifetime &Message,
+    const TSharedRef<IMessageContext, ESPMode::ThreadSafe> &Context)
 {
-    // in BP
+    if (Message.rCube == this)
+        if (Message.CurrentLifetime < 61)
+            UpdateLifetime(Message.CurrentLifetime);
+        else
+            UE_LOG(LogTemp, Error, TEXT("AGeneratedCube::BM_AgeHandler CurrentLifetime > 60"));
 }
 
 void AGeneratedCube::StopAgeThread()
@@ -100,10 +106,9 @@ void AGeneratedCube::StopAgeThread()
         // Снятие потока с паузы, если был кем-либо приостановлен
         AgeGen_Thread->Suspend(false);
         // Завершение потока без(!) ожидания
-        // PS: С ожиданием проявляется баг:
-        // * куб не уничтожается, но вызывается Destroyed();
-        // * при останове сессии (EndPlay) происходит попытка повторного завершения потока.
-        // - Следствие: Зависание, в связи с попыткой завершить уже завершённый поток (???)
+        // PS: С ожиданием возникает баг:
+        // * Куб слишком долго уничтожается
+        // * Основной поток зависает
         AgeGen_Thread->Kill(false);
 
         // Очистка указателей
@@ -111,10 +116,19 @@ void AGeneratedCube::StopAgeThread()
         AgeGen_Thread = nullptr;
         AgeGen_Class = nullptr;
     }
+
+    if (EP_AgeReceiver.IsValid())
+        EP_AgeReceiver.Reset();
 }
 
 void AGeneratedCube::CreateAgeThread()
 {
+    EP_AgeReceiver = FMessageEndpoint::Builder("AgeReceiver_AGeneratedCube")
+        .Handling<FCubeLifetime>(this, &AGeneratedCube::BM_AgeHandler);
+
+    if (EP_AgeReceiver.IsValid())
+        EP_AgeReceiver->Subscribe<FCubeLifetime>();
+
     if (!AgeGen_Thread)
     {
         if (!AgeGen_Class)
@@ -149,31 +163,30 @@ void AGeneratedCube::BM_ColorHandler(const FCubeColor &Message, const TSharedRef
 void AGeneratedCube::StopColorThread()
 {
     // Аналогичен StopAgeThread()
+
     if (ColorGen_Thread)
     {
         ColorGen_Thread->Suspend(false);
-        // Здесь уже ожидаем завершение потока
-        ColorGen_Thread->Kill(true);
+        ColorGen_Thread->Kill(false);
 
         ColorGen_Thread = nullptr;
         ColorGen_Class = nullptr;
     }
 
-    // Индивидуально для Message
     if (EP_ColorReceiver.IsValid())
         EP_ColorReceiver.Reset();
 }
 
 void AGeneratedCube::CreateColorThread()
 {
-    // Индивидуально для Message
+    // Аналогичен CreateAgeThread()
+
     EP_ColorReceiver = FMessageEndpoint::Builder("ColorReceiver_AGeneratedCube")
         .Handling<FCubeColor>(this, &AGeneratedCube::BM_ColorHandler);
 
     if (EP_ColorReceiver.IsValid())
         EP_ColorReceiver->Subscribe<FCubeColor>();
 
-    // Аналогичен CreateAgeThread()
     if (!ColorGen_Thread)
     {
         if (!ColorGen_Class)

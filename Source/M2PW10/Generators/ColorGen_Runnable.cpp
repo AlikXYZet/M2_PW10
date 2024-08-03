@@ -22,8 +22,6 @@ uint32 FColorGen_Runnable::Run()
     // Решение(?): Использовать IMessageBus для передачи данных с вызовом функции через делегат
     //rGeneratedCube->SetColor(GetRandomColor());
 
-    // Отправка данных
-    // PS: Требуется отслеживание Куба при работе с несколькими Кубами
     if (EP_ColorSender.IsValid())
         EP_ColorSender->Publish<FCubeColor>(new FCubeColor(rGeneratedCube, GetRandomColor()));
 
