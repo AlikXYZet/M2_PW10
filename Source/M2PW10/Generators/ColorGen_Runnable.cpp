@@ -25,7 +25,7 @@ uint32 FColorGen_Runnable::Run()
     // Отправка данных
     // PS: Требуется отслеживание Куба при работе с несколькими Кубами
     if (EP_ColorSender.IsValid())
-        EP_ColorSender->Publish<FCubeColor>(new FCubeColor(GetRandomColor()));
+        EP_ColorSender->Publish<FCubeColor>(new FCubeColor(rGeneratedCube, GetRandomColor()));
 
     return 1;
 }

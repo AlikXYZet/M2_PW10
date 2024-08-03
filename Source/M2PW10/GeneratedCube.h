@@ -15,10 +15,11 @@ struct FCubeColor
 {
     GENERATED_BODY()
 
+    AGeneratedCube *rCube = nullptr;
     FLinearColor ColorData = FLinearColor::Black;
 
-    FCubeColor(FLinearColor iColor = FLinearColor::Black)
-        : ColorData(iColor) {};
+    FCubeColor(AGeneratedCube *iCube = nullptr, FLinearColor iColor = FLinearColor::Black)
+        : rCube(iCube), ColorData(iColor) {};
 };
 
 
@@ -56,6 +57,9 @@ public:
     virtual void Destroyed() override;
 
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+    // Функция для реализации функций остановки всех потоков в Destroyed() и EndPlay();
+    void StopAllThread();
     //--------------------------------------------
 
 

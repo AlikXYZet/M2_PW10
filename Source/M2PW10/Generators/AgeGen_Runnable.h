@@ -27,9 +27,8 @@ private:
     // а уничтожается в перед уничтожением данного Куба. Т.е., всегда валиден в данном потоке
     AGeneratedCube *rGeneratedCube;
 
-    // Контроль работы потока (потокабезопасна - нужна ли в данном случае ???)
-    //FThreadSafeBool bIsStopThread = false;
-    bool bIsStopThread = false;
+    // Контроль работы потока (потокабезопасна)
+    FThreadSafeBool bIsStopThread = false;
 
     // Переменная отсчёта времени жизни
     int32 CurrentLifetime = 0;

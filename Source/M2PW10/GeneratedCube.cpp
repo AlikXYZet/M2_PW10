@@ -47,8 +47,7 @@ void AGeneratedCube::Tick(float DeltaTime)
 void AGeneratedCube::Destroyed()
 {
     // Останов потоков при уничтожении актора
-    StopAgeThread();
-    StopColorThread(); // Перестраховка
+    StopAllThread();
 
     Super::Destroyed();
 }
@@ -56,10 +55,15 @@ void AGeneratedCube::Destroyed()
 void AGeneratedCube::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     // Останов потоков при выходе из активной сессии
-    StopAgeThread();
-    StopColorThread(); // Перестраховка
+    StopAllThread();
 
     Super::EndPlay(EndPlayReason);
+}
+
+void AGeneratedCube::StopAllThread()
+{
+    StopAgeThread();
+    StopColorThread(); // Перестраховка
 }
 //----------------------------------------------------------------------------------------
 
@@ -80,8 +84,8 @@ void AGeneratedCube::UpdateLifetime(const int32 iLifetime)
         TextLifetime->SetText(FString::Printf(TEXT("%d"), iLifetime));
         UpdateLifetime_BP(iLifetime);
     }
-    //else
-    //    this->Destroy();
+    else
+        this->Destroy();
 }
 
 void AGeneratedCube::UpdateLifetime_BP_Implementation(const int32 Lifetime)
@@ -138,7 +142,8 @@ void AGeneratedCube::SetColor(const FLinearColor iColor)
 
 void AGeneratedCube::BM_ColorHandler(const FCubeColor &Message, const TSharedRef<IMessageContext, ESPMode::ThreadSafe> &Context)
 {
-    SetColor(FLinearColor(Message.ColorData));
+    if (Message.rCube == this)
+        SetColor(FLinearColor(Message.ColorData));
 }
 
 void AGeneratedCube::StopColorThread()
@@ -147,7 +152,8 @@ void AGeneratedCube::StopColorThread()
     if (ColorGen_Thread)
     {
         ColorGen_Thread->Suspend(false);
-        ColorGen_Thread->Kill(false);
+        // Здесь уже ожидаем завершение потока
+        ColorGen_Thread->Kill(true);
 
         ColorGen_Thread = nullptr;
         ColorGen_Class = nullptr;
@@ -174,7 +180,7 @@ void AGeneratedCube::CreateColorThread()
             ColorGen_Class = new FColorGen_Runnable(this);
 
         ColorGen_Thread = FRunnableThread::Create(
-        ColorGen_Class,
+            ColorGen_Class,
             TEXT("ColorGenThread"),
             0,
             EThreadPriority::TPri_Normal);
