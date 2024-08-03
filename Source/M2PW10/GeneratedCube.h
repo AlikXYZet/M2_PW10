@@ -93,9 +93,6 @@ public:
     virtual void Destroyed() override;
 
     virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-
-    // Функция для реализации функций остановки всех потоков в Destroyed() и EndPlay();
-    void StopAllThread();
     //--------------------------------------------
 
 
@@ -124,8 +121,8 @@ private:
     FAgeGen_Runnable *AgeGen_Class = nullptr;
     FRunnableThread *AgeGen_Thread = nullptr;
 
-    void StopAgeThread();
     void CreateAgeThread();
+    void StopAgeThread();
     //--------------------------------------------
 
 
@@ -149,7 +146,36 @@ private:
     FColorGen_Runnable *ColorGen_Class = nullptr;
     FRunnableThread *ColorGen_Thread = nullptr;
 
-    void StopColorThread();
     void CreateColorThread();
+    void StopColorThread();
+    //--------------------------------------------
+
+
+
+    /* ---   CubeThread   --- */
+
+    template<typename T_Runnable>
+    void CreateCubeThread(FRunnableThread *irRunnableThread, T_Runnable *irRunnableClass, TCHAR *NameThread);
+
+    void StopCubeThread(FRunnableThread *irRunnableThread, FRunnable *irRunnableClass);
+
+    // Функция для реализации функций остановки всех потоков в Destroyed() и EndPlay();
+    void StopAllCubeThread();
+    //--------------------------------------------
+
+
+
+    /* ---   CubeMessage   --- */
+
+    // PS: Не рабочий - часть данных из потоков типа ColorThread не корректны (???)
+    /*
+    template<typename MT>
+    void CreateCubeMessage(
+        FMessageEndpointPtr iMessageEndpointPtr,
+        void (AGeneratedCube:: *HandlerFunc)(const MT &Message, const IMessageContextRef &Context),
+        FName NameMessage);
+    */
+
+    void StopCubeMessage(FMessageEndpointPtr &iMessageEndpointPtr);
     //--------------------------------------------
 };

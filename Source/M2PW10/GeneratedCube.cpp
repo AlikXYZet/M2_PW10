@@ -28,6 +28,9 @@ AGeneratedCube::AGeneratedCube()
     TextLifetime->SetTextRenderColor(FColor::Red);
     TextLifetime->SetRelativeLocation(FVector(60.f, 30.f, -40.f));
     //--------------------------------------------
+
+    // Для памятки
+    //UE_LOG(LogTemp, Warning, TEXT("AGeneratedCube::AGeneratedCube"));
 }
 
 void AGeneratedCube::BeginPlay()
@@ -47,7 +50,7 @@ void AGeneratedCube::Tick(float DeltaTime)
 void AGeneratedCube::Destroyed()
 {
     // Останов потоков при уничтожении актора
-    StopAllThread();
+    StopAllCubeThread();
 
     Super::Destroyed();
 }
@@ -55,15 +58,9 @@ void AGeneratedCube::Destroyed()
 void AGeneratedCube::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     // Останов потоков при выходе из активной сессии
-    StopAllThread();
+    StopAllCubeThread();
 
     Super::EndPlay(EndPlayReason);
-}
-
-void AGeneratedCube::StopAllThread()
-{
-    StopAgeThread();
-    StopColorThread(); // Перестраховка
 }
 //----------------------------------------------------------------------------------------
 
@@ -93,53 +90,29 @@ void AGeneratedCube::BM_AgeHandler(
     const TSharedRef<IMessageContext, ESPMode::ThreadSafe> &Context)
 {
     if (Message.rCube == this)
-        if (Message.CurrentLifetime < 61)
-            UpdateLifetime(Message.CurrentLifetime);
-        else
-            UE_LOG(LogTemp, Error, TEXT("AGeneratedCube::BM_AgeHandler CurrentLifetime > 60"));
-}
-
-void AGeneratedCube::StopAgeThread()
-{
-    if (AgeGen_Thread)
-    {
-        // Снятие потока с паузы, если был кем-либо приостановлен
-        AgeGen_Thread->Suspend(false);
-        // Завершение потока без(!) ожидания
-        // PS: С ожиданием возникает баг:
-        // * Куб слишком долго уничтожается
-        // * Основной поток зависает
-        AgeGen_Thread->Kill(false);
-
-        // Очистка указателей
-        // PS: Если AgeGen_Thread валиден, то и AgeGen_Class валиден - смотри CreateAgeThread()
-        AgeGen_Thread = nullptr;
-        AgeGen_Class = nullptr;
-    }
-
-    if (EP_AgeReceiver.IsValid())
-        EP_AgeReceiver.Reset();
+        UpdateLifetime(Message.CurrentLifetime);
 }
 
 void AGeneratedCube::CreateAgeThread()
 {
-    EP_AgeReceiver = FMessageEndpoint::Builder("AgeReceiver_AGeneratedCube")
+    EP_AgeReceiver = FMessageEndpoint::Builder(TEXT("AgeReceiver_AGeneratedCube"))
         .Handling<FCubeLifetime>(this, &AGeneratedCube::BM_AgeHandler);
 
     if (EP_AgeReceiver.IsValid())
         EP_AgeReceiver->Subscribe<FCubeLifetime>();
 
-    if (!AgeGen_Thread)
-    {
-        if (!AgeGen_Class)
-            AgeGen_Class = new FAgeGen_Runnable(this);
+    //CreateCubeMessage<FCubeLifetime>(
+    //    EP_AgeReceiver,
+    //    &AGeneratedCube::BM_AgeHandler,
+    //    TEXT("AgeReceiver_AGeneratedCube"));
 
-        AgeGen_Thread = FRunnableThread::Create(
-            AgeGen_Class,
-            TEXT("AgeGenThread"),
-            0,
-            EThreadPriority::TPri_Normal);
-    }
+    CreateCubeThread<FAgeGen_Runnable>(AgeGen_Thread, AgeGen_Class, TEXT("AgeGenThread"));
+}
+
+void AGeneratedCube::StopAgeThread()
+{
+    StopCubeThread(AgeGen_Thread, AgeGen_Class);
+    StopCubeMessage(EP_AgeReceiver);
 }
 //----------------------------------------------------------------------------------------
 
@@ -154,49 +127,99 @@ void AGeneratedCube::SetColor(const FLinearColor iColor)
     StopColorThread();
 }
 
-void AGeneratedCube::BM_ColorHandler(const FCubeColor &Message, const TSharedRef<IMessageContext, ESPMode::ThreadSafe> &Context)
+void AGeneratedCube::BM_ColorHandler(
+    const FCubeColor &Message,
+    const TSharedRef<IMessageContext, ESPMode::ThreadSafe> &Context)
 {
     if (Message.rCube == this)
         SetColor(FLinearColor(Message.ColorData));
 }
 
-void AGeneratedCube::StopColorThread()
-{
-    // Аналогичен StopAgeThread()
-
-    if (ColorGen_Thread)
-    {
-        ColorGen_Thread->Suspend(false);
-        ColorGen_Thread->Kill(false);
-
-        ColorGen_Thread = nullptr;
-        ColorGen_Class = nullptr;
-    }
-
-    if (EP_ColorReceiver.IsValid())
-        EP_ColorReceiver.Reset();
-}
-
 void AGeneratedCube::CreateColorThread()
 {
-    // Аналогичен CreateAgeThread()
-
-    EP_ColorReceiver = FMessageEndpoint::Builder("ColorReceiver_AGeneratedCube")
+    EP_ColorReceiver = FMessageEndpoint::Builder(TEXT("ColorReceiver_AGeneratedCube"))
         .Handling<FCubeColor>(this, &AGeneratedCube::BM_ColorHandler);
 
     if (EP_ColorReceiver.IsValid())
         EP_ColorReceiver->Subscribe<FCubeColor>();
 
-    if (!ColorGen_Thread)
-    {
-        if (!ColorGen_Class)
-            ColorGen_Class = new FColorGen_Runnable(this);
+    //CreateCubeMessage<FCubeColor>(
+    //    EP_ColorReceiver,
+    //    &AGeneratedCube::BM_ColorHandler,
+    //    TEXT("ColorReceiver_AGeneratedCube"));
 
-        ColorGen_Thread = FRunnableThread::Create(
-            ColorGen_Class,
-            TEXT("ColorGenThread"),
+    CreateCubeThread<FColorGen_Runnable>(ColorGen_Thread, ColorGen_Class, TEXT("ColorGenThread"));
+}
+
+void AGeneratedCube::StopColorThread()
+{
+    StopCubeThread(ColorGen_Thread, ColorGen_Class);
+    StopCubeMessage(EP_ColorReceiver);
+}
+//----------------------------------------------------------------------------------------
+
+
+
+/* ---   CubeThread   --- */
+
+template<typename T_Runnable>
+void AGeneratedCube::CreateCubeThread(FRunnableThread *irRunnableThread, T_Runnable *irRunnableClass, TCHAR *NameThread)
+{
+    if (!irRunnableThread)
+    {
+        if (!irRunnableClass)
+            irRunnableClass = new T_Runnable(this);
+
+        irRunnableThread = FRunnableThread::Create(
+            irRunnableClass,
+            NameThread,
             0,
             EThreadPriority::TPri_Normal);
     }
+}
+
+void AGeneratedCube::StopCubeThread(FRunnableThread *irRunnableThread, FRunnable *irRunnableClass)
+{
+    if (irRunnableThread)
+    {
+        irRunnableThread->Suspend(false);
+        irRunnableThread->Kill(false);
+
+        irRunnableThread = nullptr;
+
+        if (irRunnableClass)
+            irRunnableClass = nullptr;
+    }
+}
+
+void AGeneratedCube::StopAllCubeThread()
+{
+    StopAgeThread();
+    StopColorThread(); // Перестраховка
+}
+//----------------------------------------------------------------------------------------
+
+
+
+/* ---   CubeMessage   --- */
+/*
+template<typename MT>
+void AGeneratedCube::CreateCubeMessage(
+    FMessageEndpointPtr iMessageEndpointPtr,
+    void (AGeneratedCube:: *HandlerFunc)(const MT &Message, const IMessageContextRef &Context),
+    FName NameMessage)
+{
+    iMessageEndpointPtr = FMessageEndpoint::Builder(NameMessage)
+        .Handling<MT>(this, HandlerFunc);
+
+    if (iMessageEndpointPtr.IsValid())
+        iMessageEndpointPtr->Subscribe<MT>();
+}
+*/
+
+void AGeneratedCube::StopCubeMessage(FMessageEndpointPtr &iMessageEndpointPtr)
+{
+    if (iMessageEndpointPtr.IsValid())
+        iMessageEndpointPtr.Reset();
 }
 //----------------------------------------------------------------------------------------
