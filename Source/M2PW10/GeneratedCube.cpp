@@ -65,43 +65,34 @@ void AGeneratedCube::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 /* ---   Age   --- */
 
-void AGeneratedCube::SetAge(const int32 iAge)
+void AGeneratedCube::SetAge(AGeneratedCube *irCube, const int32 iAge)
 {
-    Age = iAge;
-    TextAge->SetText(FString::Printf(TEXT("%d"), iAge));
+    AsyncTask(ENamedThreads::GameThread, [irCube, iAge]()
+        {
+            irCube->TextAge->SetText(FString::Printf(TEXT("%d"), iAge));
+        });
 }
 
-void AGeneratedCube::UpdateLifetime(const int32 iLifetime)
+void AGeneratedCube::UpdateLifetime(AGeneratedCube *irCube, const int32 iLifetime)
 {
-    if (iLifetime >= 0)
-    {
-        TextLifetime->SetText(FString::Printf(TEXT("%d"), iLifetime));
-        UpdateLifetime_BP(iLifetime);
-    }
-    //else
-    //    this->Destroy();
-}
-
-void AGeneratedCube::UpdateLifetime_BP_Implementation(const int32 Lifetime)
-{
-    // in BP
+    AsyncTask(ENamedThreads::GameThread, [irCube, iLifetime]()
+        {
+            if (iLifetime >= 0)
+            {
+                irCube->TextLifetime->SetText(FString::Printf(TEXT("%d"), iLifetime));
+            }
+            else
+                irCube->Destroy();
+        });
 }
 
 void AGeneratedCube::StopAgeThread()
 {
     if (AgeGen_Thread)
     {
-        // Снятие потока с паузы, если был кем-либо приостановлен
         AgeGen_Thread->Suspend(false);
-        // Завершение потока без(!) ожидания
-        // PS: С ожиданием проявляется баг:
-        // * куб не уничтожается, но вызывается Destroyed();
-        // * при останове сессии (EndPlay) происходит попытка повторного завершения потока.
-        // - Следствие: Зависание, в связи с попыткой завершить уже завершённый поток (???)
         AgeGen_Thread->Kill(false);
 
-        // Очистка указателей
-        // PS: Если AgeGen_Thread валиден, то и AgeGen_Class валиден - смотри CreateAgeThread()
         AgeGen_Thread = nullptr;
         AgeGen_Class = nullptr;
     }
@@ -127,16 +118,14 @@ void AGeneratedCube::CreateAgeThread()
 
 /* ---   Color   --- */
 
-void AGeneratedCube::SetColor(const FLinearColor iColor)
+void AGeneratedCube::SetColor(AGeneratedCube *irCube, const FLinearColor iColor)
 {
-    CubeMesh->CreateDynamicMaterialInstance(0)->SetVectorParameterValue(TEXT("CubeColor"), iColor);
+    AsyncTask(ENamedThreads::GameThread, [irCube, iColor]()
+        {
+            irCube->CubeMesh->CreateDynamicMaterialInstance(0)->SetVectorParameterValue(TEXT("CubeColor"), iColor);
 
-    StopColorThread();
-}
-
-void AGeneratedCube::UpdateColor()
-{
-    SetColor(NewColor);
+            irCube->StopColorThread();
+        });
 }
 
 void AGeneratedCube::StopColorThread()
@@ -159,7 +148,7 @@ void AGeneratedCube::CreateColorThread()
             ColorGen_Class = new FColorGen_Runnable(this);
 
         ColorGen_Thread = FRunnableThread::Create(
-        ColorGen_Class,
+            ColorGen_Class,
             TEXT("ColorGenThread"),
             0,
             EThreadPriority::TPri_Normal);

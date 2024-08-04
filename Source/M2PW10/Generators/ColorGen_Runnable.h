@@ -1,4 +1,4 @@
-#pragma once
+п»ї#pragma once
 
 #include "CoreMinimal.h"
 
@@ -22,7 +22,7 @@ public:
 
 private:
 
-    // Указатель на куб, чьи данные генерируем
+    // РЈРєР°Р·Р°С‚РµР»СЊ РЅР° РєСѓР±, С‡СЊРё РґР°РЅРЅС‹Рµ РіРµРЅРµСЂРёСЂСѓРµРј
     AGeneratedCube *rGeneratedCube;
 
 };

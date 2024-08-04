@@ -15,7 +15,8 @@ FAgeGen_Runnable::~FAgeGen_Runnable()
 
 bool FAgeGen_Runnable::Init()
 {
-    rGeneratedCube->SetAge(CurrentLifetime);
+    // PS: Прямой вызов функции, работающей на игровом потоке (GameThread)
+    rGeneratedCube->SetAge(rGeneratedCube, CurrentLifetime);
     return true;
 }
 
@@ -25,13 +26,9 @@ uint32 FAgeGen_Runnable::Run()
     {
         --CurrentLifetime;
 
-        if (CurrentLifetime < 0)
-            rGeneratedCube->Destroy();
-        else
-        {
-            rGeneratedCube->UpdateLifetime(CurrentLifetime);
-            FPlatformProcess::Sleep(1.f);
-        }
+        // PS: Прямой вызов функции, работающей на игровом потоке (GameThread)
+        rGeneratedCube->UpdateLifetime(rGeneratedCube, CurrentLifetime);
+        FPlatformProcess::Sleep(1.f);
     }
 
     return 1;
@@ -39,17 +36,10 @@ uint32 FAgeGen_Runnable::Run()
 
 void FAgeGen_Runnable::Stop()
 {
-    // Выход из цикла Run()
-    // PS: Из-за вызова задержки ::Sleep(1.f) приходится ожидать его завершения...
-    // Требуется организовать быстрый выход из цикла:
-    // *? через пустой цикл while(bTime) с выходом по таймеру и вызове Stop() ???
     bIsStopThread = true;
 }
 
 void FAgeGen_Runnable::Exit()
 {
-    // Очистка указаателей
-    // PS: Требуется анализ необходимости очистки (ускорение кода на несколько тактов),
-    // ибо после вызова Exit() данный класс вроде-как уничтожается, уничтожая за собой указатели
     rGeneratedCube = nullptr;
 }

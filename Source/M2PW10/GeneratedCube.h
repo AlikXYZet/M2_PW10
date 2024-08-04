@@ -48,11 +48,9 @@ public:
 public:
 
     //UFUNCTION(BlueprintCallable)  // for tests
-    void SetAge(const int32 iAge);
+    void SetAge(AGeneratedCube *irCube, const int32 iAge);
 
-    void UpdateLifetime(const int32 iLifetime);
-    UFUNCTION(BlueprintNativeEvent)
-    void UpdateLifetime_BP(const int32 Lifetime);
+    void UpdateLifetime(AGeneratedCube *irCube, const int32 iLifetime);
 
 private:
 
@@ -72,14 +70,9 @@ private:
 public:
 
     //UFUNCTION(BlueprintCallable)
-    void SetColor(const FLinearColor iColor);
-    void UpdateColor();
-
-    FLinearColor NewColor;
+    void SetColor(AGeneratedCube *irCube, const FLinearColor iColor);
 
 private:
-
-    
 
     FColorGen_Runnable *ColorGen_Class = nullptr;
     FRunnableThread *ColorGen_Thread = nullptr;
