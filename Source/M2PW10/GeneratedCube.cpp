@@ -50,8 +50,7 @@ void AGeneratedCube::Tick(float DeltaTime)
 void AGeneratedCube::Destroyed()
 {
     // Останов потоков при уничтожении актора
-    StopAgeThread();
-    StopColorThread(); // Перестраховка
+    StopAllCubeThread();
 
     Super::Destroyed();
 }
@@ -59,8 +58,7 @@ void AGeneratedCube::Destroyed()
 void AGeneratedCube::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     // Останов потоков при выходе из активной сессии
-    StopAgeThread();
-    StopColorThread(); // Перестраховка
+    StopAllCubeThread();
 
     Super::EndPlay(EndPlayReason);
 }
@@ -90,49 +88,20 @@ void AGeneratedCube::UpdateLifetime()
 
 void AGeneratedCube::CreateAgeThread()
 {
-    rAgeGen_Event = FPlatformProcess::GetSynchEventFromPool();
-
-    if (!AgeGen_Thread)
-    {
-        if (!AgeGen_Class)
-            AgeGen_Class = new FAgeGen_Runnable(this);
-
-        AgeGen_Thread = FRunnableThread::Create(
-            AgeGen_Class,
-            TEXT("AgeGenThread"),
-            0,
-            EThreadPriority::TPri_Normal);
-    }
-
-    while (!rAgeGen_Event) {}
-    rAgeGen_Event->Trigger();
-    rAgeGen_Event->Wait();
-    UpdateAge();
+    CreateCubeThread<FAgeGen_Runnable>(
+        AgeGen_Thread,
+        AgeGen_Class,
+        rAgeGen_Event,
+        &AGeneratedCube::UpdateAge);
 }
 
 
 void AGeneratedCube::StopAgeThread()
 {
-    if (AgeGen_Thread)
-    {
-        // Снятие потока с паузы, если был кем-либо приостановлен
-        AgeGen_Thread->Suspend(false);
-
-        rAgeGen_Event->Trigger();
-        AgeGen_Thread->Kill(true);
-
-        // Очистка указателей
-        // PS: Если AgeGen_Thread валиден, то и AgeGen_Class валиден - смотри CreateAgeThread()
-        AgeGen_Thread = nullptr;
-        AgeGen_Class = nullptr;
-    }
-
-    if (rAgeGen_Event)
-    {
-        rAgeGen_Event->Trigger();
-        FPlatformProcess::ReturnSynchEventToPool(rAgeGen_Event);
-        rAgeGen_Event = nullptr;
-    }
+    StopCubeThread<FAgeGen_Runnable>(
+        AgeGen_Thread,
+        AgeGen_Class,
+        rAgeGen_Event);
 }
 //----------------------------------------------------------------------------------------
 
@@ -149,42 +118,80 @@ void AGeneratedCube::UpdateColor()
 
 void AGeneratedCube::CreateColorThread()
 {
-    rColorGen_Event = FPlatformProcess::GetSynchEventFromPool();
+    CreateCubeThread<FColorGen_Runnable>(
+        ColorGen_Thread,
+        ColorGen_Class,
+        rColorGen_Event,
+        &AGeneratedCube::UpdateColor);
+}
 
-    if (!ColorGen_Thread)
+void AGeneratedCube::StopColorThread()
+{
+    StopCubeThread<FColorGen_Runnable>(
+        ColorGen_Thread,
+        ColorGen_Class,
+        rColorGen_Event);
+}
+//----------------------------------------------------------------------------------------
+
+
+
+/* ---   CubeThread   --- */
+
+template<typename TR, class>
+void AGeneratedCube::CreateCubeThread(
+    FRunnableThread *&irRunnableThread,
+    TR *&irRunnable,
+    FEvent *&irEvent,
+    void (AGeneratedCube:: *Function)(void))
+{
+    irEvent = FPlatformProcess::GetSynchEventFromPool();
+
+    if (!irRunnableThread)
     {
-        if (!ColorGen_Class)
-            ColorGen_Class = new FColorGen_Runnable(this);
+        if (!irRunnable)
+            irRunnable = new TR(this);
 
-        ColorGen_Thread = FRunnableThread::Create(
-            ColorGen_Class,
+        irRunnableThread = FRunnableThread::Create(
+            irRunnable,
             TEXT("ColorGenThread"),
             0,
             EThreadPriority::TPri_Normal);
     }
 
-    while (!rColorGen_Event) {}
-    rColorGen_Event->Trigger();
-    rColorGen_Event->Wait();
-    UpdateColor();
+    while (!irEvent) {}
+    irEvent->Trigger();
+    irEvent->Wait();
+    (this->*Function)();
 }
 
-void AGeneratedCube::StopColorThread()
+template<typename TR, class>
+void AGeneratedCube::StopCubeThread(
+    FRunnableThread *&irRunnableThread,
+    TR *&irRunnable,
+    FEvent *&irEvent)
 {
-    if (ColorGen_Thread && rColorGen_Event)
+    if (irRunnableThread)
     {
-        ColorGen_Thread->Suspend(false);
-        rColorGen_Event->Trigger();
-        ColorGen_Thread->Kill(true);
+        irRunnableThread->Suspend(false);
+        irEvent->Trigger();
+        irRunnableThread->Kill(true);
 
-        ColorGen_Thread = nullptr;
-        ColorGen_Class = nullptr;
+        irRunnableThread = nullptr;
+        irRunnable = nullptr;
     }
 
-    if (rColorGen_Event)
+    if (irEvent)
     {
-        FPlatformProcess::ReturnSynchEventToPool(rColorGen_Event);
-        rColorGen_Event = nullptr;
+        irEvent->Trigger();
+        FPlatformProcess::ReturnSynchEventToPool(irEvent);
+        irEvent = nullptr;
     }
+}
+
+void AGeneratedCube::StopAllCubeThread()
+{
+    StopAgeThread();
+    StopColorThread(); // Перестраховка
 }
 //----------------------------------------------------------------------------------------

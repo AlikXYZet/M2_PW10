@@ -10,6 +10,18 @@
 
 #include "GeneratedCube.generated.h"
 
+
+
+/*---   Шаблон на проверку типа : true, если "TR" является FAgeGen_Runnable или FColorGen_Runnable    ---*/
+
+template<typename TR>
+constexpr bool is_cubeRunnable =
+    std::is_same<TR, FAgeGen_Runnable>::value 
+    || std::is_same<TR, FColorGen_Runnable>::value;
+//----------------------------------------------------------------------------------------------------
+
+
+
 UCLASS()
 class M2PW10_API AGeneratedCube : public AActor
 {
@@ -86,5 +98,27 @@ private:
 
     void CreateColorThread();
     void StopColorThread();
+    //--------------------------------------------
+
+
+
+    /* ---   CubeThread   --- */
+    // PS: Используется (int *&) x - ссылка на указатель
+
+    template<typename TR, class = std::enable_if_t<is_cubeRunnable<TR>>>
+    void CreateCubeThread(
+        FRunnableThread *&irRunnableThread,
+        TR *&irRunnable,
+        FEvent *&irEvent,
+        void (AGeneratedCube::*Function)(void));
+
+    template<typename TR, class = std::enable_if_t<is_cubeRunnable<TR>>>
+    void StopCubeThread(
+        FRunnableThread *&irRunnableThread,
+        TR *&irRunnable,
+        FEvent *&irEvent);
+
+    // Функция для реализации функций остановки всех потоков в Destroyed() и EndPlay();
+    void StopAllCubeThread();
     //--------------------------------------------
 };
