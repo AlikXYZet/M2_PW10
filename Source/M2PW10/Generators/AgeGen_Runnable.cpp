@@ -15,23 +15,30 @@ FAgeGen_Runnable::~FAgeGen_Runnable()
 
 bool FAgeGen_Runnable::Init()
 {
-    rGeneratedCube->SetAge(CurrentLifetime);
     return true;
 }
 
 uint32 FAgeGen_Runnable::Run()
 {
+    while (!rGeneratedCube->rAgeGen_Event) {}
+
+    rGeneratedCube->rAgeGen_Event->Wait();
+    rGeneratedCube->Age = CurrentLifetime;
+    rGeneratedCube->Lifetime = CurrentLifetime;
+    rGeneratedCube->rAgeGen_Event->Trigger();
+
     while (!bIsStopThread)
     {
         --CurrentLifetime;
 
-        if (CurrentLifetime < 0)
-            rGeneratedCube->Destroy();
-        else
+        if (rGeneratedCube->rAgeGen_Event)
         {
-            rGeneratedCube->UpdateLifetime(CurrentLifetime);
-            FPlatformProcess::Sleep(1.f);
+            rGeneratedCube->rAgeGen_Event->Wait();
+            rGeneratedCube->Lifetime = CurrentLifetime;
+            rGeneratedCube->rAgeGen_Event->Trigger();
         }
+
+        FPlatformProcess::Sleep(0.5f);
     }
 
     return 1;

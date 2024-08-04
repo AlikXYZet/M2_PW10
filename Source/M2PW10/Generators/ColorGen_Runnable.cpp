@@ -19,9 +19,14 @@ uint32 FColorGen_Runnable::Run()
     // Решение(?): Записать значение от GetRandomColor() в локальную переменную куба
     // и вызвать функцию/делегат (???)
     //rGeneratedCube->SetColor(GetRandomColor());
+    while (!rGeneratedCube->rColorGen_Event) {}
 
-    rGeneratedCube->NewColor = GetRandomColor();
-    //rGeneratedCube->UpdateColor();
+    if (rGeneratedCube->rColorGen_Event)
+    {
+        rGeneratedCube->rColorGen_Event->Wait();
+        rGeneratedCube->NewColor = GetRandomColor();
+        rGeneratedCube->rColorGen_Event->Trigger();
+    }
 
     return 0;
 }

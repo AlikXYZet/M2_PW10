@@ -47,23 +47,25 @@ public:
     /* ---   Age   --- */
 public:
 
-    //UFUNCTION(BlueprintCallable)  // for tests
-    void SetAge(const int32 iAge);
+    void UpdateAge();
 
-    void UpdateLifetime(const int32 iLifetime);
-    UFUNCTION(BlueprintNativeEvent)
-    void UpdateLifetime_BP(const int32 Lifetime);
-
-private:
+    void UpdateLifetime();
 
     // Возвраст кубика: время жизни в секундах
     int32 Age = 0;
+    // Переменная отсчёта времени жизни
+    int32 Lifetime = 0;
+
+    FEvent *rAgeGen_Event = nullptr;
+    //FEvent *rLifetimeGen_Event = nullptr;
+
+private:
 
     FAgeGen_Runnable *AgeGen_Class = nullptr;
     FRunnableThread *AgeGen_Thread = nullptr;
 
-    void StopAgeThread();
     void CreateAgeThread();
+    void StopAgeThread();
     //--------------------------------------------
 
 
@@ -71,20 +73,18 @@ private:
     /* ---   Color   --- */
 public:
 
-    //UFUNCTION(BlueprintCallable)
-    void SetColor(const FLinearColor iColor);
     void UpdateColor();
 
     FLinearColor NewColor;
 
-private:
+    FEvent *rColorGen_Event = nullptr;
 
-    
+private:
 
     FColorGen_Runnable *ColorGen_Class = nullptr;
     FRunnableThread *ColorGen_Thread = nullptr;
 
-    void StopColorThread();
     void CreateColorThread();
+    void StopColorThread();
     //--------------------------------------------
 };

@@ -3,8 +3,8 @@
 AGeneratedCube::AGeneratedCube()
 {
     // Вызывать Tick() каждый такт?
-    PrimaryActorTick.bCanEverTick = false;  // предварительно
-    //PrimaryActorTick.TickInterval = 1;    // 1 = 1 sec
+    PrimaryActorTick.bCanEverTick = true; // предварительно
+    PrimaryActorTick.TickInterval = 1.f;    // 1.0f = 1 sec
 
     /* ---   CubeMesh   --- */
     CubeMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Cube Mesh"));
@@ -26,6 +26,9 @@ AGeneratedCube::AGeneratedCube()
     TextLifetime->SetTextRenderColor(FColor::Red);
     TextLifetime->SetRelativeLocation(FVector(60.f, 30.f, -40.f));
     //--------------------------------------------
+
+    // Для памятки
+    //UE_LOG(LogTemp, Warning, TEXT("AGeneratedCube::AGeneratedCube"));
 }
 
 void AGeneratedCube::BeginPlay()
@@ -40,6 +43,8 @@ void AGeneratedCube::BeginPlay()
 void AGeneratedCube::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
+
+    UpdateLifetime();
 }
 
 void AGeneratedCube::Destroyed()
@@ -65,50 +70,28 @@ void AGeneratedCube::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 /* ---   Age   --- */
 
-void AGeneratedCube::SetAge(const int32 iAge)
+void AGeneratedCube::UpdateAge()
 {
-    Age = iAge;
-    TextAge->SetText(FString::Printf(TEXT("%d"), iAge));
+    TextAge->SetText(FString::Printf(TEXT("%d"), Age));
 }
 
-void AGeneratedCube::UpdateLifetime(const int32 iLifetime)
+void AGeneratedCube::UpdateLifetime()
 {
-    if (iLifetime >= 0)
+    rAgeGen_Event->Trigger();
+    rAgeGen_Event->Wait();
+
+    if (Lifetime >= 0)
     {
-        TextLifetime->SetText(FString::Printf(TEXT("%d"), iLifetime));
-        UpdateLifetime_BP(iLifetime);
+        TextLifetime->SetText(FString::Printf(TEXT("%d"), Lifetime));
     }
-    //else
-    //    this->Destroy();
-}
-
-void AGeneratedCube::UpdateLifetime_BP_Implementation(const int32 Lifetime)
-{
-    // in BP
-}
-
-void AGeneratedCube::StopAgeThread()
-{
-    if (AgeGen_Thread)
-    {
-        // Снятие потока с паузы, если был кем-либо приостановлен
-        AgeGen_Thread->Suspend(false);
-        // Завершение потока без(!) ожидания
-        // PS: С ожиданием проявляется баг:
-        // * куб не уничтожается, но вызывается Destroyed();
-        // * при останове сессии (EndPlay) происходит попытка повторного завершения потока.
-        // - Следствие: Зависание, в связи с попыткой завершить уже завершённый поток (???)
-        AgeGen_Thread->Kill(false);
-
-        // Очистка указателей
-        // PS: Если AgeGen_Thread валиден, то и AgeGen_Class валиден - смотри CreateAgeThread()
-        AgeGen_Thread = nullptr;
-        AgeGen_Class = nullptr;
-    }
+    else
+        this->Destroy();
 }
 
 void AGeneratedCube::CreateAgeThread()
 {
+    rAgeGen_Event = FPlatformProcess::GetSynchEventFromPool();
+
     if (!AgeGen_Thread)
     {
         if (!AgeGen_Class)
@@ -120,6 +103,36 @@ void AGeneratedCube::CreateAgeThread()
             0,
             EThreadPriority::TPri_Normal);
     }
+
+    while (!rAgeGen_Event) {}
+    rAgeGen_Event->Trigger();
+    rAgeGen_Event->Wait();
+    UpdateAge();
+}
+
+
+void AGeneratedCube::StopAgeThread()
+{
+    if (AgeGen_Thread)
+    {
+        // Снятие потока с паузы, если был кем-либо приостановлен
+        AgeGen_Thread->Suspend(false);
+
+        rAgeGen_Event->Trigger();
+        AgeGen_Thread->Kill(true);
+
+        // Очистка указателей
+        // PS: Если AgeGen_Thread валиден, то и AgeGen_Class валиден - смотри CreateAgeThread()
+        AgeGen_Thread = nullptr;
+        AgeGen_Class = nullptr;
+    }
+
+    if (rAgeGen_Event)
+    {
+        rAgeGen_Event->Trigger();
+        FPlatformProcess::ReturnSynchEventToPool(rAgeGen_Event);
+        rAgeGen_Event = nullptr;
+    }
 }
 //----------------------------------------------------------------------------------------
 
@@ -127,42 +140,50 @@ void AGeneratedCube::CreateAgeThread()
 
 /* ---   Color   --- */
 
-void AGeneratedCube::SetColor(const FLinearColor iColor)
-{
-    CubeMesh->CreateDynamicMaterialInstance(0)->SetVectorParameterValue(TEXT("CubeColor"), iColor);
-
-    StopColorThread();
-}
-
 void AGeneratedCube::UpdateColor()
 {
-    SetColor(NewColor);
-}
-
-void AGeneratedCube::StopColorThread()
-{
-    if (ColorGen_Thread)
-    {
-        //ColorGen_Thread->Suspend(false);
-        ColorGen_Thread->Kill(false);
-
-        ColorGen_Thread = nullptr;
-        ColorGen_Class = nullptr;
-    }
+    CubeMesh->CreateDynamicMaterialInstance(0)->SetVectorParameterValue(TEXT("CubeColor"), NewColor);
 }
 
 void AGeneratedCube::CreateColorThread()
 {
+    rColorGen_Event = FPlatformProcess::GetSynchEventFromPool();
+
     if (!ColorGen_Thread)
     {
         if (!ColorGen_Class)
             ColorGen_Class = new FColorGen_Runnable(this);
 
         ColorGen_Thread = FRunnableThread::Create(
-        ColorGen_Class,
+            ColorGen_Class,
             TEXT("ColorGenThread"),
             0,
             EThreadPriority::TPri_Normal);
+    }
+
+    while (!rColorGen_Event) {}
+    rColorGen_Event->Trigger();
+    rColorGen_Event->Wait();
+    UpdateColor();
+}
+
+void AGeneratedCube::StopColorThread()
+{
+    if (ColorGen_Thread && rColorGen_Event)
+    {
+        ColorGen_Thread->Suspend(false);
+        rColorGen_Event->Trigger();
+        ColorGen_Thread->Kill(true);
+
+        ColorGen_Thread = nullptr;
+        ColorGen_Class = nullptr;
+    }
+
+    if (rColorGen_Event)
+    {
+        rColorGen_Event->Trigger();
+        FPlatformProcess::ReturnSynchEventToPool(rColorGen_Event);
+        rColorGen_Event = nullptr;
     }
 }
 //----------------------------------------------------------------------------------------
