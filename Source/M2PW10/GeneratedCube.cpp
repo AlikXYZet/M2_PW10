@@ -63,25 +63,19 @@ void AGeneratedCube::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 /* ---   Age   --- */
 
-void AGeneratedCube::SetAge(AGeneratedCube *irCube, const int32 iAge)
+void AGeneratedCube::SetAge(const int32 iAge)
 {
-    AsyncTask(ENamedThreads::GameThread, [irCube, iAge]()
-        {
-            irCube->TextAge->SetText(FString::Printf(TEXT("%d"), iAge));
-        });
+    TextAge->SetText(FString::Printf(TEXT("%d"), iAge));
 }
 
-void AGeneratedCube::UpdateLifetime(AGeneratedCube *irCube, const int32 iLifetime)
+void AGeneratedCube::UpdateLifetime(const int32 iLifetime)
 {
-    AsyncTask(ENamedThreads::GameThread, [irCube, iLifetime]()
-        {
-            if (iLifetime >= 0)
-            {
-                irCube->TextLifetime->SetText(FString::Printf(TEXT("%d"), iLifetime));
-            }
-            else
-                irCube->Destroy();
-        });
+    if (iLifetime >= 0)
+    {
+        TextLifetime->SetText(FString::Printf(TEXT("%d"), iLifetime));
+    }
+    else
+        Destroy();
 }
 
 void AGeneratedCube::CreateAgeThread()
@@ -104,14 +98,11 @@ void AGeneratedCube::StopAgeThread()
 
 /* ---   Color   --- */
 
-void AGeneratedCube::SetColor(AGeneratedCube *irCube, const FLinearColor iColor)
+void AGeneratedCube::SetColor(const FLinearColor iColor)
 {
-    AsyncTask(ENamedThreads::GameThread, [irCube, iColor]()
-        {
-            irCube->CubeMesh->CreateDynamicMaterialInstance(0)->SetVectorParameterValue(TEXT("CubeColor"), iColor);
+    CubeMesh->CreateDynamicMaterialInstance(0)->SetVectorParameterValue(TEXT("CubeColor"), iColor);
 
-            irCube->StopColorThread();
-        });
+    StopColorThread();
 }
 
 void AGeneratedCube::CreateColorThread()

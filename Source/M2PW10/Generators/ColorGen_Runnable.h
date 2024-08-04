@@ -25,4 +25,7 @@ private:
     // Указатель на куб, чьи данные генерируем
     AGeneratedCube *rGeneratedCube;
 
+    // Изменение цвета Куба
+    // (Функция игрового потока [GameThread])
+    void SetColor_GameThread(AGeneratedCube *irCube, const FLinearColor iColor);
 };

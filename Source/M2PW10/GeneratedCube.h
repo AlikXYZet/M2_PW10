@@ -60,9 +60,9 @@ public:
 public:
 
     //UFUNCTION(BlueprintCallable)  // for tests
-    void SetAge(AGeneratedCube *irCube, const int32 iAge);
+    void SetAge(const int32 iAge);
 
-    void UpdateLifetime(AGeneratedCube *irCube, const int32 iLifetime);
+    void UpdateLifetime(const int32 iLifetime);
 
 private:
 
@@ -82,7 +82,7 @@ private:
 public:
 
     //UFUNCTION(BlueprintCallable)
-    void SetColor(AGeneratedCube *irCube, const FLinearColor iColor);
+    void SetColor(const FLinearColor iColor);
 
 private:
 

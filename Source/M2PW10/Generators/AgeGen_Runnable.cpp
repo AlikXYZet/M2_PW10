@@ -16,7 +16,7 @@ FAgeGen_Runnable::~FAgeGen_Runnable()
 bool FAgeGen_Runnable::Init()
 {
     // PS: Прямой вызов функции, работающей на игровом потоке (GameThread)
-    rGeneratedCube->SetAge(rGeneratedCube, CurrentLifetime);
+    SetAge_GameThread(rGeneratedCube, CurrentLifetime);
     return true;
 }
 
@@ -27,7 +27,7 @@ uint32 FAgeGen_Runnable::Run()
         --CurrentLifetime;
 
         // PS: Прямой вызов функции, работающей на игровом потоке (GameThread)
-        rGeneratedCube->UpdateLifetime(rGeneratedCube, CurrentLifetime);
+        UpdateLifetime_GameThread(rGeneratedCube, CurrentLifetime);
         FPlatformProcess::Sleep(1.f);
     }
 
@@ -42,4 +42,20 @@ void FAgeGen_Runnable::Stop()
 void FAgeGen_Runnable::Exit()
 {
     rGeneratedCube = nullptr;
+}
+
+void FAgeGen_Runnable::SetAge_GameThread(AGeneratedCube *irCube, int32 iAge)
+{
+    AsyncTask(ENamedThreads::GameThread, [irCube, iAge]()
+        {
+            irCube->SetAge(iAge);
+        });
+}
+
+void FAgeGen_Runnable::UpdateLifetime_GameThread(AGeneratedCube *irCube, int32 iLifetime)
+{
+    AsyncTask(ENamedThreads::GameThread, [irCube, iLifetime]()
+        {
+            irCube->UpdateLifetime(iLifetime);
+        });
 }

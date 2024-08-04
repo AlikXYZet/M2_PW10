@@ -33,4 +33,12 @@ private:
 
     // Переменная отсчёта времени жизни
     int32 CurrentLifetime = 0;
+
+    // Сохранение данных возроста Куба
+    // (Функция игрового потока [GameThread])
+    void SetAge_GameThread(AGeneratedCube *irCube, int32 iAge);
+
+    // Контроль времени жизни Куба
+    // (Функция игрового потока [GameThread])
+    void UpdateLifetime_GameThread(AGeneratedCube *irCube, int32 iLifetime);
 };
