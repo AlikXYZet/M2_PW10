@@ -143,6 +143,8 @@ void AGeneratedCube::StopAgeThread()
 void AGeneratedCube::UpdateColor()
 {
     CubeMesh->CreateDynamicMaterialInstance(0)->SetVectorParameterValue(TEXT("CubeColor"), NewColor);
+
+    StopColorThread();
 }
 
 void AGeneratedCube::CreateColorThread()
@@ -181,7 +183,6 @@ void AGeneratedCube::StopColorThread()
 
     if (rColorGen_Event)
     {
-        rColorGen_Event->Trigger();
         FPlatformProcess::ReturnSynchEventToPool(rColorGen_Event);
         rColorGen_Event = nullptr;
     }

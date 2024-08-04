@@ -37,8 +37,6 @@ uint32 FAgeGen_Runnable::Run()
             rGeneratedCube->Lifetime = CurrentLifetime;
             rGeneratedCube->rAgeGen_Event->Trigger();
         }
-
-        FPlatformProcess::Sleep(0.5f);
     }
 
     return 1;
