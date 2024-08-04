@@ -36,9 +36,9 @@ private:
 
     // Сохранение данных возроста Куба
     // (Функция игрового потока [GameThread])
-    void SetAge_GameThread(AGeneratedCube *irCube, int32 iAge);
+    void SetAge_GameThread(AGeneratedCube *irCube, const int32 &iAge);
 
     // Контроль времени жизни Куба
     // (Функция игрового потока [GameThread])
-    void UpdateLifetime_GameThread(AGeneratedCube *irCube, int32 iLifetime);
+    void UpdateLifetime_GameThread(AGeneratedCube *irCube, const int32 &iLifetime);
 };

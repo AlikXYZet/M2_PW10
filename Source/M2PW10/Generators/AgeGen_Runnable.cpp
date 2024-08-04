@@ -44,16 +44,20 @@ void FAgeGen_Runnable::Exit()
     rGeneratedCube = nullptr;
 }
 
-void FAgeGen_Runnable::SetAge_GameThread(AGeneratedCube *irCube, int32 iAge)
+void FAgeGen_Runnable::SetAge_GameThread(AGeneratedCube *irCube, const int32 &iAge)
 {
+    // В лямбду-функцию необходимо передавать не ссылку, а копию переменных 
+    // для избежания ошибки доступа к памяти другим потоком
     AsyncTask(ENamedThreads::GameThread, [irCube, iAge]()
         {
             irCube->SetAge(iAge);
         });
 }
 
-void FAgeGen_Runnable::UpdateLifetime_GameThread(AGeneratedCube *irCube, int32 iLifetime)
+void FAgeGen_Runnable::UpdateLifetime_GameThread(AGeneratedCube *irCube, const int32 &iLifetime)
 {
+    // В лямбду-функцию необходимо передавать не ссылку, а копию переменных 
+    // для избежания ошибки доступа к памяти другим потоком
     AsyncTask(ENamedThreads::GameThread, [irCube, iLifetime]()
         {
             irCube->UpdateLifetime(iLifetime);

@@ -12,8 +12,8 @@
 
 
 
-/*---   Шаблон на проверку типа : true, если "TR" является FAgeGen_Runnable или FColorGen_Runnable    ---*/
-
+/*---   Шаблон на проверку типа :    ---*/
+// true, если "TR" является FAgeGen_Runnable или FColorGen_Runnable
 template<typename TR>
 constexpr bool is_cubeRunnable =
 std::is_same<TR, FAgeGen_Runnable>::value
@@ -59,15 +59,11 @@ public:
     /* ---   Age   --- */
 public:
 
-    //UFUNCTION(BlueprintCallable)  // for tests
-    void SetAge(const int32 iAge);
+    void SetAge(const int32 &iAge);
 
-    void UpdateLifetime(const int32 iLifetime);
+    void UpdateLifetime(const int32 &iLifetime);
 
 private:
-
-    // Возвраст кубика: время жизни в секундах
-    int32 Age = 0;
 
     FAgeGen_Runnable *AgeGen_Class = nullptr;
     FRunnableThread *AgeGen_Thread = nullptr;
@@ -81,8 +77,7 @@ private:
     /* ---   Color   --- */
 public:
 
-    //UFUNCTION(BlueprintCallable)
-    void SetColor(const FLinearColor iColor);
+    void SetColor(const FLinearColor &iColor);
 
 private:
 

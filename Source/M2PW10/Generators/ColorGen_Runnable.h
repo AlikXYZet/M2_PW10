@@ -27,5 +27,5 @@ private:
 
     // Изменение цвета Куба
     // (Функция игрового потока [GameThread])
-    void SetColor_GameThread(AGeneratedCube *irCube, const FLinearColor iColor);
+    void SetColor_GameThread(AGeneratedCube *irCube, const FLinearColor &iColor);
 };

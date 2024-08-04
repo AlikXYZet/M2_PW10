@@ -63,12 +63,12 @@ void AGeneratedCube::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 /* ---   Age   --- */
 
-void AGeneratedCube::SetAge(const int32 iAge)
+void AGeneratedCube::SetAge(const int32 &iAge)
 {
     TextAge->SetText(FString::Printf(TEXT("%d"), iAge));
 }
 
-void AGeneratedCube::UpdateLifetime(const int32 iLifetime)
+void AGeneratedCube::UpdateLifetime(const int32 &iLifetime)
 {
     if (iLifetime >= 0)
     {
@@ -98,7 +98,7 @@ void AGeneratedCube::StopAgeThread()
 
 /* ---   Color   --- */
 
-void AGeneratedCube::SetColor(const FLinearColor iColor)
+void AGeneratedCube::SetColor(const FLinearColor &iColor)
 {
     CubeMesh->CreateDynamicMaterialInstance(0)->SetVectorParameterValue(TEXT("CubeColor"), iColor);
 
