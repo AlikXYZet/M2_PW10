@@ -45,8 +45,7 @@ void AGeneratedCube::Tick(float DeltaTime)
 void AGeneratedCube::Destroyed()
 {
     // Останов потоков при уничтожении актора
-    StopAgeThread();
-    StopColorThread(); // Перестраховка
+    StopAllCubeThread();
 
     Super::Destroyed();
 }
@@ -54,8 +53,7 @@ void AGeneratedCube::Destroyed()
 void AGeneratedCube::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
     // Останов потоков при выходе из активной сессии
-    StopAgeThread();
-    StopColorThread(); // Перестраховка
+    StopAllCubeThread();
 
     Super::EndPlay(EndPlayReason);
 }
@@ -86,31 +84,19 @@ void AGeneratedCube::UpdateLifetime(AGeneratedCube *irCube, const int32 iLifetim
         });
 }
 
-void AGeneratedCube::StopAgeThread()
-{
-    if (AgeGen_Thread)
-    {
-        AgeGen_Thread->Suspend(false);
-        AgeGen_Thread->Kill(false);
-
-        AgeGen_Thread = nullptr;
-        AgeGen_Class = nullptr;
-    }
-}
-
 void AGeneratedCube::CreateAgeThread()
 {
-    if (!AgeGen_Thread)
-    {
-        if (!AgeGen_Class)
-            AgeGen_Class = new FAgeGen_Runnable(this);
+    CreateCubeThread<FAgeGen_Runnable>(
+        AgeGen_Thread,
+        AgeGen_Class,
+        TEXT("AgeGenThread"));
+}
 
-        AgeGen_Thread = FRunnableThread::Create(
-            AgeGen_Class,
-            TEXT("AgeGenThread"),
-            0,
-            EThreadPriority::TPri_Normal);
-    }
+void AGeneratedCube::StopAgeThread()
+{
+    StopCubeThread<FAgeGen_Runnable>(
+        AgeGen_Thread,
+        AgeGen_Class);
 }
 //----------------------------------------------------------------------------------------
 
@@ -128,30 +114,63 @@ void AGeneratedCube::SetColor(AGeneratedCube *irCube, const FLinearColor iColor)
         });
 }
 
-void AGeneratedCube::StopColorThread()
-{
-    if (ColorGen_Thread)
-    {
-        //ColorGen_Thread->Suspend(false);
-        ColorGen_Thread->Kill(false);
-
-        ColorGen_Thread = nullptr;
-        ColorGen_Class = nullptr;
-    }
-}
-
 void AGeneratedCube::CreateColorThread()
 {
-    if (!ColorGen_Thread)
-    {
-        if (!ColorGen_Class)
-            ColorGen_Class = new FColorGen_Runnable(this);
+    CreateCubeThread<FColorGen_Runnable>(
+        ColorGen_Thread,
+        ColorGen_Class,
+        TEXT("ColorGenThread"));
+}
 
-        ColorGen_Thread = FRunnableThread::Create(
-            ColorGen_Class,
-            TEXT("ColorGenThread"),
+void AGeneratedCube::StopColorThread()
+{
+    StopCubeThread<FColorGen_Runnable>(
+        ColorGen_Thread,
+        ColorGen_Class);
+}
+//----------------------------------------------------------------------------------------
+
+
+
+/* ---   CubeThread   --- */
+
+template<typename TR, class>
+void AGeneratedCube::CreateCubeThread(
+    FRunnableThread *&irRunnableThread,
+    TR *&irRunnable,
+    const TCHAR *ThreadName)
+{
+    if (!irRunnableThread)
+    {
+        if (!irRunnable)
+            irRunnable = new TR(this);
+
+        irRunnableThread = FRunnableThread::Create(
+            irRunnable,
+            ThreadName,
             0,
             EThreadPriority::TPri_Normal);
     }
+}
+
+template<typename TR, class>
+inline void AGeneratedCube::StopCubeThread(
+    FRunnableThread *&irRunnableThread,
+    TR *&irRunnable)
+{
+    if (irRunnableThread)
+    {
+        irRunnableThread->Suspend(false);
+        irRunnableThread->Kill(false);
+
+        irRunnableThread = nullptr;
+        irRunnable = nullptr;
+    }
+}
+
+void AGeneratedCube::StopAllCubeThread()
+{
+    StopAgeThread();
+    StopColorThread(); // Перестраховка
 }
 //----------------------------------------------------------------------------------------
